@@ -1,7 +1,9 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Scalar.AspNetCore;
 using ShopWaveLite.Api.Data;
 using ShopWaveLite.Api.Helpers;
 using ShopWaveLite.Api.Middleware;
@@ -11,6 +13,9 @@ using ShopWaveLite.Api.Services;
 using ShopWaveLite.Api.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Prevent JWT claim remapping
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 // ── Database ───────────────────────────────────────────────────────
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -39,7 +44,7 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = jwtSettings["Issuer"],
         ValidAudience = jwtSettings["Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(key),
-        ClockSkew = TimeSpan.Zero  // no grace period on token expiry
+        ClockSkew = TimeSpan.Zero
     };
 });
 
@@ -59,16 +64,22 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 
 builder.Services.AddControllers();
 
-// ── Scalar API docs ────────────────────────────────────────────────
+// ── API Docs ───────────────────────────────────────────────────────
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// ── Middleware pipeline ────────────────────────────────────────────
 app.UseMiddleware<ExceptionMiddleware>();
 
 if (app.Environment.IsDevelopment())
+{
     app.MapOpenApi();
+    app.MapScalarApiReference(options =>
+    {
+        options.Title = "ShopWave Lite API";
+        options.Theme = ScalarTheme.Purple;
+    });
+}
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
