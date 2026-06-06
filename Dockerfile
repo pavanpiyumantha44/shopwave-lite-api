@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Copy solution and project files first (better layer caching)
-COPY ShopWaveLite.sln ./
+COPY ShopWaveLite.slnx ./
 COPY ShopWaveLite.Api/ShopWaveLite.Api.csproj ShopWaveLite.Api/
 
 # Restore dependencies
@@ -20,7 +20,6 @@ WORKDIR /app
 
 COPY --from=build /app/publish .
 
-# Render assigns the port via $PORT env variable
 ENV ASPNETCORE_URLS=http://+:${PORT:-8080}
 
 ENTRYPOINT ["dotnet", "ShopWaveLite.Api.dll"]
